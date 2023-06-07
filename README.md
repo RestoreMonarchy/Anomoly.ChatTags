@@ -13,7 +13,7 @@ RocketMod plugin to enhance player chat with dynamic, rich-text tags based on pe
     -   `World` - The prefix to apply when the player is in world chat mode.
     -   `Area` - The prefix to apply when the player is in area chat mode.
     -   `Group` - The prefix to apply when the player is in group chat mode.
--   `BaseColor` - The base color to apply to the player's name.
+-   `BaseColor` - The base color to apply to the player's name. Leave blank to use the default color. Ex `<BaseColor />`
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
