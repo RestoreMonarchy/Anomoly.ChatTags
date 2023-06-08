@@ -1,4 +1,5 @@
 ﻿using Anomoly.ChatTags.models;
+using Anomoly.Core.Library.UnturnedStore;
 using Rocket.API.Collections;
 using Rocket.Core;
 using Rocket.Core.Plugins;
@@ -22,6 +23,10 @@ namespace Anomoly.ChatTags
 
         private const string CHAT_MESSAGE_FORMAT = "[{0}] {1}: {2}";
 
+        private const int US_PRODUCT_ID = 1473;
+
+        private Dictionary<string, string> _playerAvatars;
+
 
         protected override void Load()
         {
@@ -29,29 +34,44 @@ namespace Anomoly.ChatTags
 
             Instance = this;
 
+            UnturnedPlayerEvents.OnPlayerChatted += UnturnedPlayerEvents_OnPlayerChatted;
+            U.Events.OnPlayerConnected += Events_OnPlayerConnected;
+            U.Events.OnPlayerDisconnected += Events_OnPlayerDisconnected;
+
+            _playerAvatars = new Dictionary<string, string>();
+            foreach(var client in Provider.clients)
+            {
+                var player = UnturnedPlayer.FromSteamPlayer(client);
+
+                var profile = player.SteamProfile;
+
+                _playerAvatars.Add(player.Id, profile.AvatarIcon.ToString());
+            }
+
             Logger.Log($"{string.Format("ChatTags v{0}", Assembly.GetName().Version.ToString())} by Anomoly has loaded");
             Logger.Log("Need support? Join my Discord @ https://discord.gg/rVH9e7Kj9y");
 
-            UnturnedPlayerEvents.OnPlayerChatted += UnturnedPlayerEvents_OnPlayerChatted;
-            U.Events.OnPlayerConnected += Events_OnPlayerConnected;
+            bool isUpdateToDate = UnturnedStoreAPI.IsUpdateToDate(US_PRODUCT_ID, Assembly.GetName().Version);
+            if (!isUpdateToDate)
+                Logger.LogWarning("[Update Detected] ChatTags has update! Please download the latest version @ https://unturnedstore.com/products/1473");
         }
 
-        private void Events_OnPlayerConnected(UnturnedPlayer player)
-        {
-            // Get the profile in memory so chat doesn't send slow
-            var _ = player.SteamProfile;
-        }
+        
 
         protected override void Unload()
         {
             base.Unload();
 
             Instance = null;
-            Logger.Log($"{string.Format("ChatTags v{0}", Assembly.GetName().Version.ToString())} by Anomoly has unloaded");
-            Logger.Log("Need support? Join my Discord @ https://discord.gg/rVH9e7Kj9y");
-
+            
             UnturnedPlayerEvents.OnPlayerChatted -= UnturnedPlayerEvents_OnPlayerChatted;
             U.Events.OnPlayerConnected -= Events_OnPlayerConnected;
+            U.Events.OnPlayerDisconnected -= Events_OnPlayerDisconnected;
+            _playerAvatars.Clear();
+            _playerAvatars = null;
+
+            Logger.Log($"{string.Format("ChatTags v{0}", Assembly.GetName().Version.ToString())} by Anomoly has unloaded");
+            Logger.Log("Need support? Join my Discord @ https://discord.gg/rVH9e7Kj9y");
         }
 
         public override TranslationList DefaultTranslations => new TranslationList();
@@ -75,8 +95,24 @@ namespace Anomoly.ChatTags
 
             TaskDispatcher.QueueOnMainThread(() =>
             {
-                ChatManager.serverSendMessage(formattedMsg, msgColor, player.SteamPlayer(), null, chatMode, player.SteamProfile.AvatarIcon.ToString(), true);
+                ChatManager.serverSendMessage(formattedMsg, msgColor, player.SteamPlayer(), null, chatMode, _playerAvatars[player.Id], true);
             });
+        }
+
+        private void Events_OnPlayerConnected(UnturnedPlayer player)
+        {
+            var profile = player.SteamProfile;
+
+            if (_playerAvatars.ContainsKey(player.Id))
+                _playerAvatars[player.Id] = profile.AvatarIcon.ToString();
+            else
+                _playerAvatars.Add(player.Id, profile.AvatarIcon.ToString());
+        }
+
+        private void Events_OnPlayerDisconnected(UnturnedPlayer player)
+        {
+            if (_playerAvatars.ContainsKey(player.Id))
+                _playerAvatars.Remove(player.Id);
         }
 
         #endregion

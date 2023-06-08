@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Anomoly.Core.Library">
+      <HintPath>..\..\Anomoly.KitsPlus\Anomoly.KitsPlus\lib\Anomoly.Core.Library.dll</HintPath>
+    </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>lib\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
