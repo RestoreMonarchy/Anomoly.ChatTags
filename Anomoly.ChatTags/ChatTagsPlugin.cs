@@ -102,7 +102,29 @@ namespace Anomoly.ChatTags
 
             TaskDispatcher.QueueOnMainThread(() =>
             {
-                ChatManager.serverSendMessage(formattedMsg, msgColor, player.SteamPlayer(), null, chatMode, _playerAvatars[player.Id], useRichText);
+                switch (chatMode)
+                {
+                    case EChatMode.GLOBAL:
+                        ChatManager.serverSendMessage(formattedMsg, msgColor, player.SteamPlayer(), null, chatMode, _playerAvatars[player.Id], useRichText);
+                        break;
+                    case EChatMode.LOCAL:
+                        float num = 16384f;
+                        foreach(var client in Provider.clients)
+                        {
+                            if((client.player.transform.position - player.Position).sqrMagnitude < (double)num)
+                                ChatManager.serverSendMessage(formattedMsg, msgColor, player.SteamPlayer(), client, chatMode, _playerAvatars[player.Id], useRichText);
+                        }
+                        break;
+                    case EChatMode.GROUP:
+                        foreach(var client in Provider.clients)
+                        {
+                            if(client.player.quests.isMemberOfSameGroupAs(player.Player))
+                                ChatManager.serverSendMessage(formattedMsg, msgColor, player.SteamPlayer(), client, chatMode, _playerAvatars[player.Id], useRichText);
+                        }
+                        break;
+                    default:
+                        break;
+                }
             });
         }
 
@@ -132,5 +154,7 @@ namespace Anomoly.ChatTags
 
             return Instance.Configuration.Instance.ChatTags.Where(x => permissions.Any(p => p.Name.Equals(x.Permission))).ToList();
         }
+
+        
     }
 }
