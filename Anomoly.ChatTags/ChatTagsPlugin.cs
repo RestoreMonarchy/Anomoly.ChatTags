@@ -1,4 +1,5 @@
 ﻿using Anomoly.ChatTags.models;
+using Anomoly.ChatTags.Services;
 using Anomoly.Core.Library.UnturnedStore;
 using Rocket.API.Collections;
 using Rocket.Core;
@@ -20,12 +21,10 @@ namespace Anomoly.ChatTags
     {
         public static ChatTagsPlugin Instance { get; private set; }
 
-
-        private const string CHAT_MESSAGE_FORMAT = "[{0}] {1}: {2}";
-
         private const int US_PRODUCT_ID = 1473;
 
         private Dictionary<string, string> _playerAvatars;
+        private ChatFormatService _formatService;
 
 
         protected override void Load()
@@ -34,10 +33,8 @@ namespace Anomoly.ChatTags
 
             Instance = this;
 
-            UnturnedPlayerEvents.OnPlayerChatted += UnturnedPlayerEvents_OnPlayerChatted;
-            U.Events.OnPlayerConnected += Events_OnPlayerConnected;
-            U.Events.OnPlayerDisconnected += Events_OnPlayerDisconnected;
-
+            _formatService = new ChatFormatService();
+            
             _playerAvatars = new Dictionary<string, string>();
             foreach(var client in Provider.clients)
             {
@@ -47,6 +44,11 @@ namespace Anomoly.ChatTags
 
                 _playerAvatars.Add(player.Id, profile.AvatarIcon.ToString());
             }
+
+            UnturnedPlayerEvents.OnPlayerChatted += UnturnedPlayerEvents_OnPlayerChatted;
+            U.Events.OnPlayerConnected += Events_OnPlayerConnected;
+            U.Events.OnPlayerDisconnected += Events_OnPlayerDisconnected;
+
 
             Logger.Log($"{string.Format("ChatTags v{0}", Assembly.GetName().Version.ToString())} by Anomoly has loaded");
             Logger.Log("Need support? Join my Discord @ https://discord.gg/rVH9e7Kj9y");
@@ -63,7 +65,7 @@ namespace Anomoly.ChatTags
             base.Unload();
 
             Instance = null;
-            
+            _formatService = null;
             UnturnedPlayerEvents.OnPlayerChatted -= UnturnedPlayerEvents_OnPlayerChatted;
             U.Events.OnPlayerConnected -= Events_OnPlayerConnected;
             U.Events.OnPlayerDisconnected -= Events_OnPlayerDisconnected;
@@ -90,12 +92,17 @@ namespace Anomoly.ChatTags
             if (Configuration.Instance.BaseColor != null)
                 msgColor = UnturnedChat.GetColorFromName(Configuration.Instance.BaseColor, color);
 
+            var format = _formatService.GetPlayerFormat(player);
 
-            var formattedMsg = string.Format(CHAT_MESSAGE_FORMAT, GetChatMode(chatMode), FormatPlayerName(player), SerializeMessage(message));
+            var formattedMsg = _formatService.Format(player, format, chatMode, message);
+
+            bool useRichText = true;
+            if (format != null)
+                useRichText = format.UseRichText;
 
             TaskDispatcher.QueueOnMainThread(() =>
             {
-                ChatManager.serverSendMessage(formattedMsg, msgColor, player.SteamPlayer(), null, chatMode, _playerAvatars[player.Id], true);
+                ChatManager.serverSendMessage(formattedMsg, msgColor, player.SteamPlayer(), null, chatMode, _playerAvatars[player.Id], useRichText);
             });
         }
 
@@ -117,50 +124,6 @@ namespace Anomoly.ChatTags
 
         #endregion
 
-        #region Utilities
-        private string GetChatMode(EChatMode mode)
-        {
-            switch (mode)
-            {
-                case EChatMode.LOCAL:
-                    return Configuration.Instance.ChatModePrefixes.Area;
-                case EChatMode.GLOBAL:
-                    return Configuration.Instance.ChatModePrefixes.World;
-                case EChatMode.GROUP:
-                    return Configuration.Instance.ChatModePrefixes.Group;
-                default:
-                    return "";
-            }
-        }
-
-        private string SerializeMessage(string message)
-        {
-            //remove all RichText
-            string pattern = @"<.*?>(.*?)</.*?>";
-
-            return Regex.Replace(message, pattern, "$1");
-        }
-
-
-        private string FormatPlayerName(UnturnedPlayer p)
-            => $"{GetPlayerPrefixes(p)}{p.DisplayName}{GetPlayerSuffixes(p)}";
-
-        #endregion
-
-        public string GetPlayerPrefixes(UnturnedPlayer player)
-        {
-            var prefixes = GetPlayerTags(player).Where(x => !x.Prefix.Equals(string.Empty)).Select(x => x.Prefix).ToArray();
-
-            return prefixes.Length > 0 ? $"[{string.Join(",", prefixes)}] " : string.Empty;
-        }
-
-
-        public string GetPlayerSuffixes(UnturnedPlayer player)
-        {
-            var suffixes = GetPlayerTags(player).Where(x => !x.Suffix.Equals(string.Empty)).Select(x => x.Suffix).ToArray();
-
-            return suffixes.Length > 0 ? $" [{string.Join(",", suffixes)}]" : string.Empty;
-        }
 
         public List<ChatTag> GetPlayerTags(UnturnedPlayer player)
         {

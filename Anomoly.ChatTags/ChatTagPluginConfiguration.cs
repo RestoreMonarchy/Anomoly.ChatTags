@@ -11,6 +11,10 @@ namespace Anomoly.ChatTags
         [XmlArrayItem("ChatTag")]
         public List<ChatTag> ChatTags { get; set; }
 
+        [XmlArray("ChatFormats")]
+        [XmlArrayItem("ChatFormat")]
+        public List<ChatFormat> ChatFormats { get; set; }
+
         public ChatModeConfiguration ChatModePrefixes { get; set; }
 
         public string BaseColor { get; set; }
@@ -30,6 +34,15 @@ namespace Anomoly.ChatTags
                     Permission = "tag.vip",
                     Prefix = "",
                     Suffix = "<color=yellow>VIP</color>"
+                }
+            };
+            ChatFormats = new List<ChatFormat>()
+            {
+                new ChatFormat()
+                {
+                    Format = "[{CHAT_MODE}] {PLAYER_NAME}: {MESSAGE}",
+                    Permission = "format.example_no_tags",
+                    UseRichText = true,
                 }
             };
             ChatModePrefixes = new ChatModeConfiguration()
