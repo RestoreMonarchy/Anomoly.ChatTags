@@ -172,5 +172,10 @@ namespace Anomoly.ChatTags
 
             return Instance.Configuration.Instance.ChatTags.Where(x => permissions.Any(p => p.Name.Equals(x.Permission))).ToList();
         }
+
+        public ChatTag GetPlayerTag(UnturnedPlayer player)
+        {
+            return GetPlayerTags(player).OrderByDescending(x => x.Priority).FirstOrDefault();
+        }
     }
 }

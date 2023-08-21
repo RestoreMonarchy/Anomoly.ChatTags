@@ -21,19 +21,36 @@ namespace Anomoly.ChatTags.Services
             if (format != null)
             {
                 formattedMessage = format.Format;
-            }                
+            }
 
-            List<ChatTag> tags = pluginInstance.GetPlayerTags(player);
+            string prefixString;
+            string suffixString;
 
-            string[] prefixes = tags.Where(x => !string.IsNullOrEmpty(x.Prefix))
-                .Select(x => FormatRichText(x.Prefix))
-                .ToArray();
-            string[] suffixes = tags.Where(x => !string.IsNullOrEmpty(x.Suffix))
-                .Select(x => FormatRichText(x.Suffix))
-                .ToArray();
+            if (configuration.DisplayMultipleTags)
+            {
+                List<ChatTag> tags = pluginInstance.GetPlayerTags(player);
 
-            string prefixFormat = prefixes.Length > 0 ? $"[{string.Join(", ", prefixes)}] " : string.Empty;
-            string suffixFormat = suffixes.Length > 0 ? $" [{string.Join(", ", suffixes)}]" : string.Empty;
+                string[] prefixes = tags.Where(x => !string.IsNullOrEmpty(x.Prefix))
+                    .Select(x => FormatRichText(x.Prefix))
+                    .ToArray();
+                string[] suffixes = tags.Where(x => !string.IsNullOrEmpty(x.Suffix))
+                    .Select(x => FormatRichText(x.Suffix))
+                    .ToArray();
+
+                prefixString = string.Join(", ", prefixes);
+                suffixString = string.Join(", ", suffixes);
+            } else
+            {
+                ChatTag tag = pluginInstance.GetPlayerTag(player);
+
+                prefixString = tag != null ? FormatRichText(tag.Prefix) : string.Empty;
+                suffixString = tag != null ? FormatRichText(tag.Suffix) : string.Empty;
+            }
+
+            
+
+            string prefixFormat = !string.IsNullOrEmpty(prefixString) ? $"[{prefixString}] " : string.Empty;
+            string suffixFormat = !string.IsNullOrEmpty(suffixString) ? $" [{suffixString}]" : string.Empty;
 
             formattedMessage = formattedMessage.Replace("{CHAT_MODE}", GetChatMode(mode));
             formattedMessage = formattedMessage.Replace("{PREFIXES}", prefixFormat);

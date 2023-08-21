@@ -10,5 +10,6 @@ namespace Anomoly.ChatTags.Models
         public string Permission { get; set; }
         public string Prefix { get; set; }
         public string Suffix { get; set; }
+        public int Priority { get; set; }
     }
 }

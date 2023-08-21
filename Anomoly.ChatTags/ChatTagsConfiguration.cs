@@ -14,6 +14,7 @@ namespace Anomoly.ChatTags
         // Initialize in the constructor, so the users who update the plugin will have a default value instead of null
         public string DefaultChatFormat { get; set; } = ChatTagsConstants.DEFAULT_FORMAT;
         public string BaseColor { get; set; }
+        public bool DisplayMultipleTags { get; set; } = true;
 
         public List<ChatTag> ChatTags { get; set; }
         public List<ChatFormat> ChatFormats { get; set; }
@@ -23,6 +24,7 @@ namespace Anomoly.ChatTags
         {
             DefaultChatFormat = ChatTagsConstants.DEFAULT_FORMAT;
             BaseColor = "white";
+            DisplayMultipleTags = true;
 
             ChatTags = new List<ChatTag>()
             {
@@ -30,13 +32,15 @@ namespace Anomoly.ChatTags
                 {
                     Permission ="tag.admin",
                     Prefix = "{color=blue}Admin{/color}",
-                    Suffix = ""
+                    Suffix = "",
+                    Priority = 10
                 },
                 new ChatTag()
                 {
                     Permission = "tag.vip",
                     Prefix = "",
-                    Suffix = "{color=yellow}VIP{/color}"
+                    Suffix = "{color=yellow}VIP{/color}",
+                    Priority = 20
                 }
             };
             ChatFormats = new List<ChatFormat>()
