@@ -3,6 +3,7 @@ using Rocket.API.Serialisation;
 using Rocket.Core;
 using Rocket.Unturned.Player;
 using SDG.Unturned;
+using Steamworks;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -45,18 +46,24 @@ namespace Anomoly.ChatTags.Services
 
                 prefixString = tag != null ? FormatRichText(tag.Prefix) : string.Empty;
                 suffixString = tag != null ? FormatRichText(tag.Suffix) : string.Empty;
-            }
-
-            
+            }            
 
             string prefixFormat = !string.IsNullOrEmpty(prefixString) ? $"[{prefixString}] " : string.Empty;
             string suffixFormat = !string.IsNullOrEmpty(suffixString) ? $" [{suffixString}]" : string.Empty;
 
+            string playerName = player.DisplayName.Replace("<", "").Replace(">", "");
+
             formattedMessage = formattedMessage.Replace("{CHAT_MODE}", GetChatMode(mode));
             formattedMessage = formattedMessage.Replace("{PREFIXES}", prefixFormat);
-            formattedMessage = formattedMessage.Replace("{PLAYER_NAME}", player.DisplayName);
+            formattedMessage = formattedMessage.Replace("{PLAYER_NAME}", playerName);
             formattedMessage = formattedMessage.Replace("{SUFFIXES}", suffixFormat);
-            formattedMessage = formattedMessage.Replace("{MESSAGE}", SerializeMessage(message));
+            
+            if (!player.IsAdmin)
+            {
+                message = message.Replace("<", string.Empty).Replace(">", string.Empty);
+            }
+
+            formattedMessage = formattedMessage.Replace("{MESSAGE}", message);
 
             return formattedMessage;
         }

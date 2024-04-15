@@ -25,7 +25,7 @@ namespace Anomoly.ChatTags.Helpers
 
         public static void RunSynchronously(System.Action action, float delaySeconds = 0)
         {
-            if (ThreadUtil.IsGameThread(Thread.CurrentThread) && delaySeconds == 0)
+            if (ThreadUtil.gameThread == Thread.CurrentThread && delaySeconds == 0)
             {
                 action.Invoke();
             }

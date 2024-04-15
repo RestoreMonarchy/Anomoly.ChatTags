@@ -10,6 +10,7 @@ using Rocket.Unturned.Chat;
 using Rocket.Unturned.Events;
 using Rocket.Unturned.Player;
 using SDG.Unturned;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Logger = Rocket.Core.Logging.Logger;
@@ -86,6 +87,8 @@ namespace Anomoly.ChatTags
 
             cancel = true;
 
+            playerAvatars.TryGetValue(player.Id, out string avatarUrl);
+
             UnityEngine.Color msgColor = color;
             if (!string.IsNullOrEmpty(Configuration.Instance.BaseColor))
             {
@@ -112,7 +115,7 @@ namespace Anomoly.ChatTags
                 foreach (Player playerInRange in playersInRange)
                 {
                     SteamPlayer client = playerInRange.channel.owner;
-                    string avatarUrl = playerAvatars[player.Id];
+                    
                     ChatManager.serverSendMessage(formattedMsg, msgColor, player.SteamPlayer(), client, chatMode, avatarUrl, useRichText);
                 }
             } else if (chatMode == EChatMode.GROUP)
@@ -122,13 +125,11 @@ namespace Anomoly.ChatTags
                     if (serverPlayer.quests.isMemberOfSameGroupAs(player.Player))
                     {
                         SteamPlayer client = serverPlayer.channel.owner;
-                        string avatarUrl = playerAvatars[player.Id];
                         ChatManager.serverSendMessage(formattedMsg, msgColor, player.SteamPlayer(), client, chatMode, avatarUrl, useRichText);
                     }
                 }
             } else
             {
-                string avatarUrl = playerAvatars[player.Id];
                 ChatManager.serverSendMessage(formattedMsg, msgColor, player.SteamPlayer(), null, chatMode, avatarUrl, useRichText);
             }
         }
@@ -138,20 +139,27 @@ namespace Anomoly.ChatTags
             // Download the player Steam profile asynchronously, because it blocks the main thread
             ThreadHelper.RunAsynchronously(() =>
             {
-                Profile profile = player.SteamProfile;
-
-                // callback
-                ThreadHelper.RunSynchronously(() =>
+                try
                 {
-                    if (playerAvatars.ContainsKey(player.Id))
+                    Profile profile = player.SteamProfile;
+
+                    // callback
+                    ThreadHelper.RunSynchronously(() =>
                     {
-                        playerAvatars[player.Id] = profile.AvatarIcon.ToString();
-                    }
-                    else
-                    {
-                        playerAvatars.Add(player.Id, profile.AvatarIcon.ToString());
-                    }
-                });
+                        if (playerAvatars.ContainsKey(player.Id))
+                        {
+                            playerAvatars[player.Id] = profile.AvatarIcon.ToString();
+                        }
+                        else
+                        {
+                            playerAvatars.Add(player.Id, profile.AvatarIcon.ToString());
+                        }
+                    });
+                } catch (Exception e)
+                {
+                    Logger.LogError($"Failed to download {player.DisplayName} Steam profile information. Error message: {e.Message}");
+                }
+                
             });            
         }
 
@@ -164,7 +172,6 @@ namespace Anomoly.ChatTags
         }
 
         #endregion
-
 
         public List<ChatTag> GetPlayerTags(UnturnedPlayer player)
         {

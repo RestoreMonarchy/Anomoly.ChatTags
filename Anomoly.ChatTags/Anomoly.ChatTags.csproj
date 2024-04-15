@@ -3,8 +3,8 @@
 	<PropertyGroup>
 		<TargetFramework>net461</TargetFramework>
 		<LangVersion>latest</LangVersion>
-		<Version>1.2.0</Version>
-		<AssemblyVersion>1.2.0</AssemblyVersion>
+		<Version>1.2.1</Version>
+		<AssemblyVersion>1.2.1</AssemblyVersion>
 		<RootNamespace>Anomoly.ChatTags</RootNamespace>
 	</PropertyGroup>
 
